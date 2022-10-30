@@ -18,45 +18,43 @@
 
 ;; Add custom file path
 (add-to-list 'load-path (expand-file-name "lisp/" user-emacs-directory))
-;; Configs for encoding style, keybindings, fontsets, font, etc.
 (require 'mech-defaults)
+(require 'mech-utils)
 (require 'mech-org)
 (require 'mech-org-agenda)
-(require 'mech-utils)
 
 ;; UI, Completion
 (defun mech/set-completion-styles ()
   (setq-local completion-styles '(basic partial-completion)))
 
+(defun mech/after-init-hook ()
+  (display-line-numbers-mode) ;; Source: https://emacs.stackexchange.com/a/280
+  ;; (global-flycheck-mode)
+  (global-company-mode)
+  (vertico-mode)
+  (savehist-mode) ;; Persist history over Emacs restarts. Vertico sorts by history position.
+  (projectile-mode)
+  )
+
 (defun mech/prog-mode-hook ()
-  (display-line-numbers-mode)
   (hs-minor-mode)
-  (mech/set-completion-styles))
+  (flycheck-mode)
+  ;; (mech/set-completion-styles)
+  )
 
 (defun mech/text-mode-hook ()
   (flyspell-mode 1)
   )
 
-(defun mech/org-mode-hook ()
-  (progn
-    (visual-line-mode)
-    (org-indent-mode)
-    (prettify-symbols-mode)
-    (display-line-numbers-mode) ;; Source: https://emacs.stackexchange.com/a/280
-    (org-bullets-mode 1)
-    (org-appear-mode)
-    (org-pdftools-setup-link)
-    ))
-
-(defun mech/set-hooks ()
+(defun mech/install-hooks ()
+  (add-hook 'after-init-hook #'mech/after-init-hook)
   (add-hook 'prog-mode-hook #'mech/prog-mode-hook)
   (add-hook 'text-mode-hook #'mech/text-mode-hook)
-  (add-hook 'eshell-mode-hook #'mech/set-completion-styles)
+  ;; (add-hook 'eshell-mode-hook #'mech/set-completion-styles)
   )
 
-(defun mech/set-etc ()
-  (setq gc-cons-threshold 6400000)
-  (setq read-process-output-max (* 32 1024))
+(defun mech/set-other ()
+  (setq ring-bell-function 'ignore) ;; Source: https://emacs.stackexchange.com/a/28916
   )
 
 ;; Theme
@@ -78,12 +76,44 @@
     (mech/set-encoding)
     (mech/set-keybindings)
     (mech/set-fontset)
-    (mech/set-font)
+    (mech/set-font-face)
     (mech/set-minibuffer)
     (mech/set-display)
-    (mech/set-etc)
-    (mech/set-hooks)
+    (mech/tune-completion-performance)
+    (mech/set-other)
+    (mech/set-tramp)
+    (mech/set-gdb)
+    (mech/install-hooks)
     )
+  )
+
+;; Vertico completion
+(use-package vertico
+  :init
+  ;; Different scroll margin
+  ;; (setq vertico-scroll-margin 0)
+
+  ;; Show more candidates
+  ;; (setq vertico-count 20)
+
+  ;; Grow and shrink the Vertico minibuffer
+  ;; (setq vertico-resize t)
+
+  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
+  (setq vertico-cycle t)
+  )
+
+;; Orderless matching
+(use-package orderless
+  :init
+  ;; Configure a custom style dispatcher (see the Consult wiki)
+  ;; (setq orderless-style-dispatchers '(+orderless-dispatch)
+  ;;       orderless-component-separator #'orderless-escapable-split-on-space)
+  (setq completion-styles '(substring orderless basic)) ;; orderless overrides basic, partial completion
+  ;; (setq completion-category-defaults nil)
+  ;; Unclear what completion-category-overrides does
+  ;; (setq completion-category-overrides '((file (styles . (orderless)))
+  ;; 					(buffer (styles orderless))))
   )
 
 ;; Spell check
@@ -127,57 +157,35 @@
   ;; :hook (org-mode . org-pdftools-setup-link)
   )
 
-;; Vertico completion
-(use-package vertico
-  :init
-  (vertico-mode)
-
-  ;; Different scroll margin
-  ;; (setq vertico-scroll-margin 0)
-
-  ;; Show more candidates
-  ;; (setq vertico-count 20)
-
-  ;; Grow and shrink the Vertico minibuffer
-  (setq vertico-resize t)
-
-  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
-  (setq vertico-cycle t)
-  )
-
-;; Persist history over Emacs restarts. Vertico sorts by history position.
-(use-package savehist
-  :init
-  (savehist-mode))
-
-;; Orderless matching
-(use-package orderless
-  :init
-  ;; Configure a custom style dispatcher (see the Consult wiki)
-  ;; (setq orderless-style-dispatchers '(+orderless-dispatch)
-  ;;       orderless-component-separator #'orderless-escapable-split-on-space)
-  (setq completion-styles '(orderless partial-completion)) ;; orderless overrides basic, partial completion
-  ;; (setq completion-category-defaults nil)
-  ;; Unclear what completion-category-overrides does
-  ;; (setq completion-category-overrides '((file (styles . (orderless)))
-  ;; 					(buffer (styles orderless))))
-  )
-
 ;; Org mode
+(defun mech/org-mode-hook ()
+  (progn
+    (visual-line-mode)
+    (org-indent-mode)
+    (prettify-symbols-mode)
+    (org-bullets-mode 1)
+    (org-appear-mode)
+    (org-pdftools-setup-link)
+    ))
+
+(defun mech/install-org-hooks ()
+  (add-hook 'org-mode-hook #'mech/org-mode-hook)
+  (add-hook 'org-capture-before-finalize-hook #'mech/org-capture-log)
+  (advice-add 'org-insert-todo-heading :after #'mech/org-capture-log)
+  (advice-add 'org-insert-todo-heading-respect-content :after #'mech/org-capture-log)
+  (advice-add 'org-insert-todo-subheading :after #'mech/org-capture-log)
+  )
+
 (use-package org
   :config
-  (mech/set-prettify-symbols-alist)
   (mech/set-org-defaults)
+  (mech/set-prettify-symbols-alist)
   (mech/set-org-latex)
-  (unless (daemonp) (mech/set-org-colors))
+  ;; To circumvent daemon and terminal mode
+  (when (display-graphic-p) (mech/set-org-colors)) ;; Source: https://stackoverflow.com/a/5795518/17006775
   (mech/custom-org-agenda)
   (mech/set-org-agenda-face)
-  (add-hook 'org-mode-hook #'mech/org-mode-hook)
-  (progn
-    (advice-add 'org-insert-todo-heading :after #'mech/org-capture-log)
-    (advice-add 'org-insert-todo-heading-respect-content :after #'mech/org-capture-log)
-    (advice-add 'org-insert-todo-subheading :after #'mech/org-capture-log)
-    (add-hook 'org-capture-before-finalize-hook #'mech/org-capture-log))
+  (mech/install-org-hooks)
   :bind (("C-c l" . org-store-link)
          ("C-c a" . org-agenda)
          ("C-c c" . org-capture)
@@ -220,11 +228,8 @@
    ("C-c n b" . org-roam-buffer-toggle))
   )
 
-
 ;; Syntax checking
 (use-package flycheck
-  :init
-  (global-flycheck-mode)
   :config
   ;; Resolve keybinding collision from flycheck key prefix "C-c !"
   ;; https://stackoverflow.com/a/32239523/17006775
@@ -233,9 +238,7 @@
 
 ;; Auto-completion
 (use-package company
-  :init
   ;; Source: https://company-mode.github.io/
-  (add-hook 'after-init-hook 'global-company-mode)
   :config
   ;; Inspired by post: https://emacs.stackexchange.com/q/14955
   ;; Also for debugging use M-x company-diag
@@ -249,8 +252,8 @@
 ;; Project management
 (use-package projectile
   :pin melpa
-  :init
-  (projectile-mode)
+  ;; :init
+  ;; (projectile-mode)
   :bind
   (:map projectile-mode-map
 	("C-c p" . projectile-command-map)
@@ -291,9 +294,9 @@
   (add-to-list 'company-backends 'company-c-headers)
   :config
   ;; Inspired by post: https://emacs.stackexchange.com/a/22570
-  (setq company-c-headers-path-system '("/c/msys64/usr/include/"
-					"/c/msys64/mingw64/include/"
-					"/c/msys64/mingw64/lib/clang/15.0.2/include/")))
+  (setq company-c-headers-path-system '("c:/msys64/usr/include/"
+					"c:/msys64/mingw64/include/"
+					"c:/msys64/mingw64/lib/clang/15.0.2/include/")))
 
 (use-package sr-speedbar)
 
@@ -313,7 +316,7 @@
 (setq server-auth-dir "~/.emacs.d/server/")
 (if (daemonp) (add-hook 'after-make-frame-functions
 			(lambda (frame) (with-selected-frame frame
-					  (progn (custom-set-fontset) (custom-set-org-colors "daemon"))))))
+					  (progn (mech/set-fontset) (mech/set-org-colors))))))
 
 (message "Successfully loaded Emacs Sigma!")
 (custom-set-variables
@@ -321,8 +324,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(org-roam vertico use-package sr-speedbar projectile org-pdftools org-bullets org-appear orderless magit-section gruvbox-theme ggtags flycheck emacsql-sqlite elpy company-c-headers)))
+ )
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

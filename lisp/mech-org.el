@@ -27,12 +27,11 @@
     (setq org-hide-leading-stars t)
     (setq org-fontify-done-headline t)
     (setq org-hide-emphasis-markers t)
-    ;; (setq org-pretty-entities t)
+    (setq org-pretty-entities t)
     (setq prettify-symbols-unprettify-at-point 'right-edge)
     (setq org-cycle-include-plain-lists 'integrate)     ;; Collapse plain lists
     (setq org-image-actual-width nil)			;; Resize pictures with captions
-    (setcdr (car (last org-file-apps)) 'emacs))		;; Set emacs as default pdf reader
-							;; Breaks Latex preview potentially
+    (setcdr (car (last org-file-apps)) 'emacs))		;; Set emacs as default pdf reader, possibly breaks Latex preview
   )
 
 ;; Custom Org Latex
@@ -71,7 +70,7 @@
   ;; Source: https://github.com/greduan/emacs-theme-gruvbox
   ;; (setq header-color-set-dark-theme '("#9d8469" "#a79178" "#b19d88" "#bbaa97" "#c5b7a6" "#cfc3b6" "#d9d0c5" "#d9d0c5"))
   (progn
-  (setq head-base-color "DarkOliveGreen")
+  (setq head-base-color "sienna4")
   (setq i 0)
   (setq colors '())
   (while (< i 8)

@@ -88,7 +88,7 @@
 		   ((org-agenda-overriding-header "One-off Tasks")
                     (org-agenda-files '(,(concat mech/org-agenda-dir "next.org")))
                     (org-agenda-skip-function '(org-agenda-skip-entry-if 'deadline 'scheduled)))))
-	    ;; ((org-agenda-compact-blocks t))
+	    ((org-agenda-compact-blocks t))
 	    ))
 	  )
     (setq org-agenda-custom-commands `,mech/org-agenda-custom-view)

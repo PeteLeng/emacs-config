@@ -12,4 +12,10 @@
       (progn (defvar-local mode-line-format-saved mode-line-format) (setq mode-line-format nil))
     (progn (setq mode-line-format mode-line-format-saved) (redraw-display))))
 
+;; Solarize theme
+(defun load-theme-solarized()
+  (add-to-list custom-theme-load-path "~/themes/")
+  (load-theme 'solarized t)
+  )
+
 (provide 'mech-utils)

@@ -85,32 +85,27 @@
   )
 
 ;; Custom Font
-(defun mech/set-font()
+(defun mech/set-font-face()
   (custom-set-faces
    `(default
-      ((t (:foreground "LemonChiffon2" :height 180 :family "Cascadia Code"))))
+      ((t (:height 170 :family "Cascadia Code")))) ; :foreground "LemonChiffon2
    `(fixed-pitch
-     ((t (:height 180 :family "JetBrains Mono"))))))
-
-;; Solarize theme
-(defun load-theme-solarized()
-  (add-to-list custom-theme-load-path "~/themes/")
-  (load-theme 'solarized t)
-  )
+     ((t (:height 170 :family "JetBrains Mono"))))))
 
 ;; Custom Minibuffer
 ;; Source:
 (defun mech/set-minibuffer ()
   ;; Add prompt indicator to `completing-read-multiple'.
   ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
-  (defun crm-indicator (args)
-    (cons (format "[CRM%s] %s"
-                  (replace-regexp-in-string
-                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
-                   crm-separator)
-                  (car args))
-          (cdr args)))
-  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+  ;; I disabled this part because I did not understand the code.
+  ;; (defun crm-indicator (args)
+  ;;   (cons (format "[CRM%s] %s"
+  ;;                 (replace-regexp-in-string
+  ;;                  "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
+  ;;                  crm-separator)
+  ;;                 (car args))
+  ;;         (cdr args)))
+  ;; (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
 
   ;; Do not allow the cursor in the minibuffer prompt
   (setq minibuffer-prompt-properties
@@ -119,7 +114,7 @@
 
   ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
   ;; Vertico commands are hidden in normal buffers.
-  (setq read-extended-command-predicate #'command-completion-default-include-p)
+  ;; (setq read-extended-command-predicate #'command-completion-default-include-p)
 
   ;; Enable recursive minibuffers
   (setq enable-recursive-minibuffers t)
@@ -133,6 +128,42 @@
   (setq inhibit-startup-message t)
   ;; (setq-default line-spacing 1) ;; Leads to image flickering
   (electric-pair-mode)
+  )
+
+;; Completion Performance
+(defun mech/tune-completion-performance ()
+  (setq gc-cons-threshold 6400000)
+  (setq read-process-output-max (* 32 1024))
+  )
+
+;; Configure gdb view
+(defun mech/set-gdb ()
+  (setq gdb-many-windows t)
+  (setq gdb-show-main t)
+  )
+
+;; Configure tramp
+(defun mech/set-tramp ()
+  (require 'tramp)
+  (setq tramp-default-method "plink")
+  ;; Source of configuring tramp-methods: https://emacs.stackexchange.com/a/52365.
+  ;; Spent three hours on this, can't believe this just worked.
+  (add-to-list 'tramp-methods
+               `("plinkw"
+                 (tramp-login-program        "plink")
+                 ;; ("%h") must be a single element, see `tramp-compute-multi-hops'.
+                 (tramp-login-args           (("-l" "%u") ("-P" "%p") ("-t")
+                                              ("%h") ("\"")
+                                              (,(format
+                                                 "env 'TERM=%s' 'PROMPT_COMMAND=' 'PS1=%s'"
+                                                 tramp-terminal-type
+                                                 "$"))
+                                              ("/bin/sh") ("\"")))
+                 (tramp-remote-shell         "/bin/sh")
+                 (tramp-remote-shell-login   ("-l"))
+                 (tramp-remote-shell-args    ("-c"))
+                 (tramp-default-port         22))
+               )
   )
 
 (provide 'mech-defaults)
