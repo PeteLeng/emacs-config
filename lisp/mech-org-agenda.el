@@ -95,7 +95,7 @@
     )
 
 ;; Custom Org Agenda Faces
-(defun mech/set-org-agenda-face ()
+(defun mech/org-agenda-face ()
   ;; M-x describe-face gets the face at point
   (custom-set-faces
    `(org-drawer

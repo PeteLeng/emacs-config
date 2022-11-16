@@ -1,5 +1,5 @@
 ;; Custom prettify symbols
-(defun mech/set-prettify-symbols-alist ()
+(defun mech/prettify-symbols-alist ()
   (setq-default prettify-symbols-alist
                 '(("#+BEGIN_SRC" . "❮")
                   ("#+END_SRC" . "❯")
@@ -22,7 +22,7 @@
   )
 
 ;; Custom Org defaults
-(defun mech/set-org-defaults ()
+(defun mech/org-defaults ()
   (progn
     (setq org-hide-leading-stars t)
     (setq org-fontify-done-headline t)
@@ -32,11 +32,13 @@
     (setq org-cycle-include-plain-lists 'integrate)     ;; Collapse plain lists
     (setq org-cycle-separator-lines 1)			;; leave an empty line when the subtree is folded.
     (setq org-image-actual-width nil)			;; Resize pictures with captions
-    (setcdr (car (last org-file-apps)) 'emacs))		;; Set emacs as default pdf reader, possibly breaks Latex preview
+    (setcdr (car (last org-file-apps)) 'emacs)		;; Set emacs as default pdf reader, possibly breaks Latex preview
+    (setq org-use-speed-commands t)
+    )		
   )
 
 ;; Custom Org Latex
-(defun mech/set-org-latex ()
+(defun mech/org-latex ()
   ;; (plist-put org-format-latex-options :scale 2) ;; Set directly in imagemagick flags
   (setq org-preview-latex-default-process 'imagemagick)
   ;; (setq org-startup-with-latex-preview t)
@@ -47,13 +49,24 @@
                              :latex-compiler
                              ("pdflatex -interaction nonstopmode -output-directory %o %f")
                              :image-converter
-                             ("magick convert -density %D -trim -antialias %f -quality 100 %O"))))
+                             ("magick convert -density %D -trim -antialias %f -quality 100 %O")))
+  ;; (setq org-latex-classes '(("mydokument"  ;; use with: #+LaTeX_CLASS: mydokument
+  ;; 			     "\\def\\input@path{{./}}"
+  ;; 			     "\\input{my-document-preamble.tex}"
+  ;; 			     ("\\section{%s}" . "\\section*{%s}")
+  ;; 			     ("\\subsection{%s}" . "\\subsection*{%s}")
+  ;; 			     ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+  ;; 			     ("\\paragraph{%s}" . "\\paragraph*{%s}")
+  ;; 			     ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+  )
 
 ;; Custom Org colors
-(defun mech/set-org-colors ()
+(defun mech/org-colors ()
   (require 'color)
   ;; Code blocks
-  (setq code-block-bg-color (color-darken-name (face-attribute 'default :background) 5))
+  ;; Do not use local variable for dynamic values
+  ;; (setq code-block-bg-color (color-darken-name (face-attribute 'default :background) 5))
+  (setq code-block-shade 5)
   
   ;; Quote blocks bg
   ;; Source: https://emacs.stackexchange.com/a/41260
@@ -64,7 +77,9 @@
   (setq link-fg-color "SlateGrey")
 
   ;; Inline code
-  (setq inline-code-bg-color (color-darken-name (face-attribute 'default :background) 3))
+  ;; Do not use local variable for dynamic values.
+  ;; (setq inline-code-bg-color (color-darken-name (face-attribute 'default :background) 5))
+  (setq inline-code-shade 5)
   (setq inline-code-fg-color "firebrick") ;; "#c7254e"
 
   ;; Headings
@@ -83,16 +98,16 @@
     (setq i (1+ i))
     (custom-set-faces
      `(,heading ((t (:foreground ,(elt colors i))))))))
-  
+
   (custom-set-faces
    `(org-block-begin-line
-     ((t (:background ,code-block-bg-color :extend t))))
+     ((t (:background ,(color-darken-name (face-attribute 'default :background) code-block-shade) :extend t))))
    `(org-block
-     ((t (:background ,code-block-bg-color :extend t))))
+     ((t (:background ,(color-darken-name (face-attribute 'default :background) code-block-shade) :extend t))))
    `(org-block-end-line
-     ((t (:background ,code-block-bg-color :extend t))))
+     ((t (:background ,(color-darken-name (face-attribute 'default :background) code-block-shade) :extend t))))
    `(org-code
-     ((t (:family "Fantasque Sans Mono" :background ,inline-code-bg-color :foreground ,inline-code-fg-color))))
+     ((t (:family "Fantasque Sans Mono" :background ,(color-darken-name (face-attribute 'default :background) inline-code-shade) :foreground ,inline-code-fg-color))))
    `(org-link
      ((t (:foreground ,link-fg-color :underline t))))
    ))

@@ -2,7 +2,7 @@
 
 ;; Chemacs multiple profiles
 (add-to-list 'native-comp-eln-load-path (expand-file-name "eln-cache/" user-emacs-directory))
-(setq package-gnupghome-dir "/c/users/pete/.emacs-profs/.emacs.prime/elpa/gnupg")
+(setq package-gnupghome-dir "c:/Users/pete/.emacs-profs/.emacs.prime/elpa/gnupg")
 
 ;; Package management
 ;; Sources: https://ianyepan.github.io/posts/setting-up-use-package/
@@ -29,18 +29,21 @@
   (global-company-mode)
   (savehist-mode) ;; Persist history over Emacs restarts. Vertico sorts by history position.
   (vertico-mode)
+  (which-key-mode)
   (projectile-mode)
   (yas-global-mode)
   )
 
 (defun mech/prog-mode-hook ()
-  (display-line-numbers-mode) ;; Source: https://emacs.stackexchange.com/a/280
+  ;; (display-line-numbers-mode) ;; Source: https://emacs.stackexchange.com/a/280
+  (linum-mode)
   (hs-minor-mode)
   (flycheck-mode)
   )
 
 (defun mech/text-mode-hook ()
-  (display-line-numbers-mode) ;; Source: https://emacs.stackexchange.com/a/280  
+  ;; (display-line-numbers-mode) ;; Source: https://emacs.stackexchange.com/a/280
+  (linum-mode)  
   (flyspell-mode 1)
   )
 
@@ -55,7 +58,7 @@
   (add-hook 'eshell-mode-hook #'mech/eshell-mode-hook)
   )
 
-(defun mech/set-other ()
+(defun mech/other ()
   (setq ring-bell-function 'ignore) ;; Source: https://emacs.stackexchange.com/a/28916
   )
 
@@ -102,6 +105,11 @@
   ;; (setq vertico-multiform-categories '((file grid) (consult-grep buffer)))
   )
 
+;; Which key
+(use-package which-key
+  :config
+  (setq which-key-popup-type 'minibuffer))
+
 ;; Mini-Buffer Actions
 (use-package embark
   :ensure t
@@ -115,6 +123,44 @@
   (setq prefix-help-command #'embark-prefix-help-command)
 
   :config
+  ;; Source: https://www.reddit.com/r/emacs/comments/osx5t9/comment/h6rkbcx/?utm_source=share&utm_medium=web2x&context=3
+  ;; (custom-set-variables '(embark-verbose-indicator-display-action '(display-buffer-below-selected (window-height . 12))))
+
+  ;; which-key intergration
+  ;; Source: https://github.com/oantolin/embark/wiki/Additional-Configuration
+  (defun embark-which-key-indicator ()
+    "An embark indicator that displays keymaps using which-key.
+The which-key help message will show the type and value of the
+current target followed by an ellipsis if there are further targets."
+    (lambda (&optional keymap targets prefix)
+      (if (null keymap)
+          (which-key--hide-popup-ignore-command)
+	(which-key--show-keymap
+	 (if (eq (plist-get (car targets) :type) 'embark-become)
+             "Become"
+           (format "Act on %s '%s'%s"
+                   (plist-get (car targets) :type)
+                   (embark--truncate-target (plist-get (car targets) :target))
+                   (if (cdr targets) "…" "")))
+	 (if prefix
+             (pcase (lookup-key keymap prefix 'accept-default)
+               ((and (pred keymapp) km) km)
+               (_ (key-binding prefix 'accept-default)))
+           keymap)
+	 nil nil t (lambda (binding)
+                     (not (string-suffix-p "-argument" (cdr binding))))))))
+
+  (setq embark-indicators '(embark-which-key-indicator embark-highlight-indicator embark-isearch-highlight-indicator))
+
+  (defun embark-hide-which-key-indicator (fn &rest args)
+    "Hide the which-key indicator immediately when using the completing-read prompter."
+    (which-key--hide-popup-ignore-command)
+    (let ((embark-indicators
+           (remq #'embark-which-key-indicator embark-indicators)))
+      (apply fn args)))
+
+  (advice-add #'embark-completing-read-prompter :around #'embark-hide-which-key-indicator)
+  (set-face-attribute 'embark-verbose-indicator-title nil :height 1.0)
   ;; Hide the mode line of the Embark live/completions buffers
   (add-to-list 'display-buffer-alist
                '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
@@ -188,6 +234,12 @@
   (setq python-shell-interpreter "python") ;; Original value is python3
   )
 
+;; CC mode
+(use-package cc-mode
+  :config
+  (c-set-offset 'case-label '+)
+  )
+
 ;; LSP
 (use-package lsp-mode
   :ensure t
@@ -226,6 +278,15 @@
   ;; Use M-x company-diag for debugging.
   (setq company-minimum-prefix-length 3)
   (setq company-idle-delay 0.1)
+  ;; Sources: https://stackoverflow.com/a/11573802/17006775
+  (setq company-backends (remove 'company-clang company-backends))
+  )
+
+;; Expand region
+(use-package expand-region
+  :ensure t
+  :config
+  (global-set-key (kbd "C-=") 'er/expand-region)
   )
 
 ;; Project management
@@ -253,20 +314,33 @@
         ("C-x t C-t" . treemacs-find-file)
         ("C-x t M-t" . treemacs-find-tag)))
 
+;; Ace-window
+(use-package ace-window
+  :config
+  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (setq aw-background nil)
+  (setq aw-dispatch-always t)
+  ;; Source: https://oremacs.com/2015/02/27/ace-window-leading-char/
+  (custom-set-faces
+   '(aw-leading-char-face
+     ((t (:inherit ace-jump-face-foreground :height 1.0)))))
+  :bind
+  (("M-o" . ace-window)))
+
 ;; Emacs
 (use-package emacs
   :init
   (progn
-    (mech/set-encoding)
-    (mech/set-keybindings)
-    (mech/set-fontset)
-    (mech/set-font-face)
-    (mech/set-minibuffer)
-    (mech/set-display)
-    (mech/set-completion-behav)
-    (mech/set-other)
-    (mech/set-tramp)
-    (mech/set-gdb)
+    (mech/encoding)
+    (mech/keybindings)
+    (mech/fontset)
+    (mech/font-face)
+    (mech/minibuffer)
+    (mech/display)
+    (mech/completion-behav)
+    (mech/other)
+    (mech/tramp)
+    (mech/gdb)
     (mech/install-hooks)
     )
   )
@@ -305,13 +379,13 @@
 
 (use-package org
   :config
-  (mech/set-org-defaults)
-  (mech/set-prettify-symbols-alist)
-  (mech/set-org-latex)
+  (mech/org-defaults)
+  (mech/prettify-symbols-alist)
+  (mech/org-latex)
   ;; To circumvent daemon and terminal mode
-  (when (display-graphic-p) (mech/set-org-colors)) ;; Source: https://stackoverflow.com/a/5795518/17006775
+  (when (display-graphic-p) (mech/org-colors)) ;; Source: https://stackoverflow.com/a/5795518/17006775
   (mech/custom-org-agenda)
-  (mech/set-org-agenda-face)
+  (mech/org-agenda-face)
   (mech/install-org-hooks)
   :bind (("C-c l" . org-store-link)
          ("C-c a" . org-agenda)
@@ -350,7 +424,7 @@
 (setq server-auth-dir "~/.emacs.d/server/")
 (if (daemonp) (add-hook 'after-make-frame-functions
 			(lambda (frame) (with-selected-frame frame
-					  (progn (mech/set-fontset) (mech/set-org-colors))))))
+					  (progn (mech/fontset) (mech/org-colors))))))
 
 (message "Welcome to Emacs Prime!")
 (custom-set-variables
@@ -358,21 +432,24 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("d80952c58cf1b06d936b1392c38230b74ae1a2a6729594770762dc0779ac66b7" "19a2c0b92a6aa1580f1be2deb7b8a8e3a4857b6c6ccf522d00547878837267e7" default))
+ '(embark-verbose-indicator-display-action '(display-buffer-below-selected (window-height . 16)))
  '(package-selected-packages
-   '(treemacs projectile company flycheck lsp-mode pyvenv yasnippet-snippets yasnippet org-roam org-bullets org-appear vertico use-package org-pdftools orderless gruvbox-theme embark)))
+   '(which-key expand-region abc treemacs projectile company flycheck lsp-mode pyvenv yasnippet-snippets yasnippet org-roam org-bullets org-appear vertico use-package org-pdftools orderless gruvbox-theme embark)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:height 140 :family "Cascadia Code"))))
- '(fixed-pitch ((t (:height 140 :family "JetBrains Mono"))))
+ '(default ((t (:height 130 :family "Cascadia Code"))))
+ '(fixed-pitch ((t (:height 130 :family "JetBrains Mono"))))
  '(org-agenda-date ((t (:foreground "sienna4" :family "JetBrains Mono"))))
  '(org-agenda-structure ((t (:underline t :foreground "sienna2" :family "JetBrains Mono"))))
  '(org-block ((t (:background "#112312e91380" :extend t))))
  '(org-block-begin-line ((t (:background "#112312e91380" :extend t))))
  '(org-block-end-line ((t (:background "#112312e91380" :extend t))))
- '(org-code ((t (:family "Fantasque Sans Mono" :background "#15ed183218f4" :foreground "firebrick"))))
+ '(org-code ((t (:family "Fantasque Sans Mono" :background "#112312e91380" :foreground "firebrick"))))
  '(org-drawer ((t (:foreground "wheat4" :height 120))))
  '(org-level-1 ((t (:foreground "#b3c05bd03123"))))
  '(org-level-2 ((t (:foreground "#c7da661536a2"))))

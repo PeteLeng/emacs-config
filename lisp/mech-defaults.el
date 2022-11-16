@@ -1,5 +1,5 @@
 ;; Custom Encoding
-(defun mech/set-encoding()
+(defun mech/encoding ()
   (set-language-environment 'utf-8)
   (prefer-coding-system       'utf-8)
   (set-default-coding-systems 'utf-8)
@@ -9,30 +9,35 @@
   )
 
 ;; Custom Key-bindings
-(defun mech/set-keybindings ()
+(defun mech/keybindings ()
   ;; windows key to super key
   (setq w32-lwindow-modifier 'super)
   (w32-register-hot-key [s-])
 
-  ;; Navigate paragraphs
-  (global-set-key (kbd "M-p") 'backward-paragraph)
-  (global-set-key (kbd "M-n") 'forward-paragraph)
+  ;; Set mark
+  ;; (global-set-key (kbd "C-,") 'set-mark-command)
 
-  ;; Navigate balanced expressions
-  ;; (global-set-key (kbd "M-a") 'backward-sexp)
-  ;; (global-set-key (kbd "M-e") 'forward-sexp)
+  ;; Jump between sentences
+  (global-set-key (kbd "M-p") 'backward-sentence)
+  (global-set-key (kbd "M-n") 'forward-sentence)
 
-  ;; Resize windows
-  (global-set-key (kbd "s-<left>") 'shrink-window-horizontally)
-  (global-set-key (kbd "s-<right>") 'enlarge-window-horizontally)
-  (global-set-key (kbd "s-<up>") 'shrink-window)
-  (global-set-key (kbd "s-<down>") 'enlarge-window)
+  ;; Jump between expressions
+  (global-set-key (kbd "M-a") 'backward-sexp)
+  (global-set-key (kbd "M-e") 'forward-sexp)
+
+  ;; Jump between paragraphs
+  (global-set-key (kbd "C-<") 'backward-paragraph)
+  (global-set-key (kbd "C->") 'forward-paragraph)
+
+  ;; Jump between buffers
+  (global-set-key (kbd "s-p") 'previous-buffer)
+  (global-set-key (kbd "s-n") 'next-buffer)
 
   ;; Comment line
   (global-set-key (kbd "C-;") 'comment-line)
 
   ;; Evaluate expression
-  (global-set-key (kbd "C-=") 'eval-last-sexp)
+  ;; (global-set-key (kbd "C-=") 'eval-last-sexp)
 
   ;; Undo
   (global-set-key (kbd "C-z") 'undo)
@@ -56,11 +61,15 @@
     (define-key hs-minor-mode-map (kbd "C-c h")
       (lookup-key hs-minor-mode-map (kbd "C-c @")))
     ;; disable @
-    (define-key hs-minor-mode-map (kbd "C-c @") nil))
+    (define-key hs-minor-mode-map (kbd "C-c @") nil)
+    (define-key hs-minor-mode-map (kbd "C-c h h") 'hs-hide-block)
+    (define-key hs-minor-mode-map (kbd "C-c h s") 'hs-show-block)
+    (define-key hs-minor-mode-map (kbd "C-c h H") 'hs-hide-all)
+    (define-key hs-minor-mode-map (kbd "C-c h S") 'hs-show-all))
   )
 
 ;; Custom Fontset
-(defun mech/set-fontset()
+(defun mech/fontset ()
   (set-fontset-font t 'han
                     (cond
                      ((string-equal system-type "windows-nt")
@@ -80,16 +89,16 @@
   )
 
 ;; Custom Font
-(defun mech/set-font-face()
+(defun mech/font-face ()
   (custom-set-faces
    `(default
-      ((t (:height 140 :family "Cascadia Code"))))
+      ((t (:height 130 :family "Cascadia Code"))))
    `(fixed-pitch
-     ((t (:height 140 :family "JetBrains Mono"))))))
+     ((t (:height 130 :family "JetBrains Mono"))))))
 
 ;; Custom Minibuffer
 ;; Source:
-(defun mech/set-minibuffer ()
+(defun mech/minibuffer ()
   ;; Add prompt indicator to `completing-read-multiple'.
   ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
   ;; I disabled this part because I did not understand the code.
@@ -116,9 +125,9 @@
   )
 
 ;; Custom UI
-(defun mech/set-display ()
+(defun mech/display ()
   (tool-bar-mode 0)
-  (menu-bar-mode 1)
+  (menu-bar-mode 0)
   (set-scroll-bar-mode nil)
   (setq inhibit-startup-message t)
   ;; (setq-default line-spacing 1) ;; Leads to image flickering
@@ -127,7 +136,7 @@
   )
 
 ;; Completion Performance
-(defun mech/set-completion-behav ()
+(defun mech/completion-behav ()
   (setq gc-cons-threshold 12800000)
   (setq read-process-output-max (* 64 1024))
   (setq read-file-name-completion-ignore-case t
@@ -136,13 +145,13 @@
   )
 
 ;; Configure gdb view
-(defun mech/set-gdb ()
+(defun mech/gdb ()
   (setq gdb-many-windows t)
   (setq gdb-show-main t)
   )
 
 ;; Configure tramp
-(defun mech/set-tramp ()
+(defun mech/tramp ()
   (require 'tramp)
   (setq tramp-default-method "plink")
   ;; Source of configuring tramp-methods: https://emacs.stackexchange.com/a/52365.
