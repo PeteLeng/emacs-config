@@ -18,4 +18,12 @@
   (load-theme 'solarized t)
   )
 
+;; Insert zero-width space
+(defun insert-zero-width-space ()
+  (interactive)
+  (insert-char #x200b))
+
+(with-eval-after-load "org"
+  (define-key org-mode-map (kbd "C-*") 'insert-zero-width-space))
+
 (provide 'mech-utils)

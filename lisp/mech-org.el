@@ -30,6 +30,7 @@
     (setq org-pretty-entities t)
     (setq prettify-symbols-unprettify-at-point 'right-edge)
     (setq org-cycle-include-plain-lists 'integrate)     ;; Collapse plain lists
+    (setq org-cycle-separator-lines 1)			;; leave an empty line when the subtree is folded.
     (setq org-image-actual-width nil)			;; Resize pictures with captions
     (setcdr (car (last org-file-apps)) 'emacs))		;; Set emacs as default pdf reader, possibly breaks Latex preview
   )

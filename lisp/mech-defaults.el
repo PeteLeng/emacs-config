@@ -9,7 +9,7 @@
   )
 
 ;; Custom Key-bindings
-(defun mech/set-keybindings()
+(defun mech/set-keybindings ()
   ;; windows key to super key
   (setq w32-lwindow-modifier 'super)
   (w32-register-hot-key [s-])
@@ -51,17 +51,12 @@
 
   ;; Hide-show minor mod
   ;; Source: https://emacs.stackexchange.com/a/33686
-  (setq hs-minor-mode-map
-        (let ((map (make-sparse-keymap)))
-          ;; These bindings roughly imitate those used by Outline mode.
-          (define-key map (kbd "C-c h C-h") 'hs-hide-block)
-          (define-key map (kbd "C-c h C-s") 'hs-show-block)
-          (define-key map (kbd "C-c h M-h") 'hs-hide-all)
-          (define-key map (kbd "C-c h M-s") 'hs-show-all)
-          (define-key map (kbd "C-c h C-l") 'hs-hide-level)
-          (define-key map (kbd "C-c h C-c") 'hs-toggle-hiding)
-          (define-key map [(shift mouse-2)] 'hs-mouse-toggle-hiding)
-          map))
+  (with-eval-after-load "hideshow"
+    ;; swap @ with h
+    (define-key hs-minor-mode-map (kbd "C-c h")
+      (lookup-key hs-minor-mode-map (kbd "C-c @")))
+    ;; disable @
+    (define-key hs-minor-mode-map (kbd "C-c @") nil))
   )
 
 ;; Custom Fontset
@@ -88,9 +83,9 @@
 (defun mech/set-font-face()
   (custom-set-faces
    `(default
-      ((t (:height 170 :family "Cascadia Code")))) ; :foreground "LemonChiffon2
+      ((t (:height 140 :family "Cascadia Code"))))
    `(fixed-pitch
-     ((t (:height 170 :family "JetBrains Mono"))))))
+     ((t (:height 140 :family "JetBrains Mono"))))))
 
 ;; Custom Minibuffer
 ;; Source:
@@ -128,12 +123,16 @@
   (setq inhibit-startup-message t)
   ;; (setq-default line-spacing 1) ;; Leads to image flickering
   (electric-pair-mode)
+  (setq split-height-threshold nil)
   )
 
 ;; Completion Performance
-(defun mech/tune-completion-performance ()
-  (setq gc-cons-threshold 6400000)
-  (setq read-process-output-max (* 32 1024))
+(defun mech/set-completion-behav ()
+  (setq gc-cons-threshold 12800000)
+  (setq read-process-output-max (* 64 1024))
+  (setq read-file-name-completion-ignore-case t
+	  read-buffer-completion-ignore-case t
+	  completion-ignore-case t)
   )
 
 ;; Configure gdb view

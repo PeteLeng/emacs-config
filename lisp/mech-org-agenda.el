@@ -88,7 +88,7 @@
 		   ((org-agenda-overriding-header "One-off Tasks")
                     (org-agenda-files '(,(concat mech/org-agenda-dir "next.org")))
                     (org-agenda-skip-function '(org-agenda-skip-entry-if 'deadline 'scheduled)))))
-	    ((org-agenda-compact-blocks t))
+	    ;; ((org-agenda-compact-blocks t))
 	    ))
 	  )
     (setq org-agenda-custom-commands `,mech/org-agenda-custom-view)
@@ -99,15 +99,15 @@
   ;; M-x describe-face gets the face at point
   (custom-set-faces
    `(org-drawer
-     ((t (:foreground "wheat4" :height 160))))
+     ((t (:foreground "wheat4" :height 120))))
    `(org-special-keyword
-     ((t (:foreground "wheat4" :height 160))))
+     ((t (:foreground "wheat4" :height 120))))
    `(org-agenda-structure
-     ((t (:underline t :foreground "chocolate" :family "JetBrains Mono"))))
+     ((t (:underline t :foreground "sienna2" :family "JetBrains Mono"))))
    `(org-agenda-date
-     ((t (:foreground "chocolate3" :family "JetBrains Mono"))))
+     ((t (:foreground "sienna4" :family "JetBrains Mono"))))
    `(org-scheduled
-     ((t (:foreground "wheat2")))))
+     ((t (:foreground "wheat4")))))
   )
 
 ;; Custom keybinding for capture

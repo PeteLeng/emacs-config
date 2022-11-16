@@ -2,6 +2,7 @@
 
 ;; Chemacs multiple profiles
 (add-to-list 'native-comp-eln-load-path (expand-file-name "eln-cache/" user-emacs-directory))
+(setq package-gnupghome-dir "/c/users/pete/.emacs-profs/.emacs.prime/elpa/gnupg")
 
 ;; Package management
 ;; Sources: https://ianyepan.github.io/posts/setting-up-use-package/
@@ -23,34 +24,35 @@
 (require 'mech-org)
 (require 'mech-org-agenda)
 
-;; UI, Completion
-(defun mech/set-completion-styles ()
-  (setq-local completion-styles '(basic partial-completion)))
-
+;; Custom hooks
 (defun mech/after-init-hook ()
-  (display-line-numbers-mode) ;; Source: https://emacs.stackexchange.com/a/280
-  ;; (global-flycheck-mode)
   (global-company-mode)
-  (vertico-mode)
   (savehist-mode) ;; Persist history over Emacs restarts. Vertico sorts by history position.
+  (vertico-mode)
   (projectile-mode)
+  (yas-global-mode)
   )
 
 (defun mech/prog-mode-hook ()
+  (display-line-numbers-mode) ;; Source: https://emacs.stackexchange.com/a/280
   (hs-minor-mode)
   (flycheck-mode)
-  ;; (mech/set-completion-styles)
   )
 
 (defun mech/text-mode-hook ()
+  (display-line-numbers-mode) ;; Source: https://emacs.stackexchange.com/a/280  
   (flyspell-mode 1)
+  )
+
+(defun mech/eshell-mode-hook ()
+  (setq-local completion-styles '(basic substring orderless))
   )
 
 (defun mech/install-hooks ()
   (add-hook 'after-init-hook #'mech/after-init-hook)
   (add-hook 'prog-mode-hook #'mech/prog-mode-hook)
   (add-hook 'text-mode-hook #'mech/text-mode-hook)
-  ;; (add-hook 'eshell-mode-hook #'mech/set-completion-styles)
+  (add-hook 'eshell-mode-hook #'mech/eshell-mode-hook)
   )
 
 (defun mech/set-other ()
@@ -59,7 +61,6 @@
 
 ;; Theme
 (use-package gruvbox-theme
-  ;; :disabled t
   :init (progn (load-theme 'gruvbox-dark-soft t t)
                (load-theme 'gruvbox-dark-medium t t)
                (load-theme 'gruvbox-dark-hard t t)
@@ -69,27 +70,17 @@
                (enable-theme 'gruvbox-dark-hard))
   )
 
-;; Emacs
-(use-package emacs
+;; Completion
+(use-package orderless
   :init
-  (progn
-    (mech/set-encoding)
-    (mech/set-keybindings)
-    (mech/set-fontset)
-    (mech/set-font-face)
-    (mech/set-minibuffer)
-    (mech/set-display)
-    (mech/tune-completion-performance)
-    (mech/set-other)
-    (mech/set-tramp)
-    (mech/set-gdb)
-    (mech/install-hooks)
-    )
+  (setq completion-styles '(substring orderless basic))
   )
 
 ;; Vertico completion
 (use-package vertico
+  :ensure t
   :init
+
   ;; Different scroll margin
   ;; (setq vertico-scroll-margin 0)
 
@@ -101,20 +92,34 @@
 
   ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
   (setq vertico-cycle t)
+
+  ;; Enable vertico-multiform
+  (vertico-multiform-mode)
+
+  ;; Configure the display per completion category.
+  ;; Use the grid display for files and a buffer
+  ;; for the consult-grep commands.
+  ;; (setq vertico-multiform-categories '((file grid) (consult-grep buffer)))
   )
 
-;; Orderless matching
-(use-package orderless
+;; Mini-Buffer Actions
+(use-package embark
+  :ensure t
+  :bind
+  (("C-." . embark-act)         ;; pick some comfortable binding
+   ("M-." . embark-dwim)        ;; good alternative: M-.
+   ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+
   :init
-  ;; Configure a custom style dispatcher (see the Consult wiki)
-  ;; (setq orderless-style-dispatchers '(+orderless-dispatch)
-  ;;       orderless-component-separator #'orderless-escapable-split-on-space)
-  (setq completion-styles '(substring orderless basic)) ;; orderless overrides basic, partial completion
-  ;; (setq completion-category-defaults nil)
-  ;; Unclear what completion-category-overrides does
-  ;; (setq completion-category-overrides '((file (styles . (orderless)))
-  ;; 					(buffer (styles orderless))))
-  )
+  ;; Optionally replace the key help with a completing-read interface
+  (setq prefix-help-command #'embark-prefix-help-command)
+
+  :config
+  ;; Hide the mode line of the Embark live/completions buffers
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
 
 ;; Spell check
 (use-package flyspell
@@ -126,8 +131,10 @@
     (setq ispell-local-dictionary-alist '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)))
     )
   :config
+  ;; resolve collision between flyspell and embark
+  (global-set-key (kbd "C-~") flyspell-mode-map)
+  (define-key flyspell-mode-map (kbd "C-;") nil)
   (global-set-key (kbd "M-\\") 'ispell-word)
-  (global-set-key (kbd "C-:") 'flyspell-auto-correct-previous-word)
   )
 
 ;; PDF mode
@@ -157,7 +164,127 @@
   ;; :hook (org-mode . org-pdftools-setup-link)
   )
 
+;; Snippets
+(use-package yasnippet
+  :ensure t)
+
+(use-package yasnippet-snippets
+  :ensure t)
+
+;; Python Virtual Environment
+(defun mech/set-python-interpreter()
+  (setq python-shell-interpreter (concat pyvenv-virtual-env "Scripts/python")))
+
+(defun mech/unset-python-interpreter()
+  (setq python-shell-interpreter "python3"))
+
+(use-package pyvenv
+  :ensure t
+  ;; :init
+  ;; (setenv "WORKON_HOME" "~/.pyenv/versions")
+  :config
+  ;; Changing name from python3 to python invokes the correct python interpreter in virtual environment.
+  ;; Inspired by source: https://blog.fredrikmeyer.net/2020/08/26/emacs-python-venv.html
+  (setq python-shell-interpreter "python") ;; Original value is python3
+  )
+
+;; LSP
+(use-package lsp-mode
+  :ensure t
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  :commands (lsp lsp-deferred)
+  :config
+  ;; (add-hook 'prog-mode-hook #'lsp-deferred)
+  (setq lsp-signature-render-documentation nil)
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
+                    :major-modes '(c-mode c++-mode)
+                    :remote? t
+                    :server-id 'clangd-remote))
+  )
+
+;; Git intergration
+(use-package magit
+  :ensure t)
+
+;; Syntax checking
+(use-package flycheck
+  :ensure t
+  :config
+  ;; Resolve keybinding collision from flycheck key prefix "C-c !"
+  ;; https://stackoverflow.com/a/32239523/17006775
+  (define-key flycheck-mode-map (kbd "C-c ! !") 'org-time-stamp-inactive)
+  )
+
+;; Auto-completion
+(use-package company
+  :ensure t
+  ;; Source: https://company-mode.github.io/
+  :config
+  ;; Inspired by post: https://emacs.stackexchange.com/q/14955
+  ;; Use M-x company-diag for debugging.
+  (setq company-minimum-prefix-length 3)
+  (setq company-idle-delay 0.1)
+  )
+
+;; Project management
+(use-package projectile
+  :pin melpa
+  :bind
+  (:map projectile-mode-map
+	("C-c p" . projectile-command-map)
+	))
+
+;; File structure visualization
+(use-package treemacs
+  :ensure t
+  :defer t
+  :init
+  ;; (with-eval-after-load 'winum
+  ;;   (define-key winum-keymap (kbd "M-0") #'treemacs-select-window))
+  :bind
+  (:map global-map
+        ("M-0"       . treemacs-select-window)
+        ("C-x t 1"   . treemacs-delete-other-windows)
+        ("C-x t t"   . treemacs)
+        ("C-x t d"   . treemacs-select-directory)
+        ("C-x t B"   . treemacs-bookmark)
+        ("C-x t C-t" . treemacs-find-file)
+        ("C-x t M-t" . treemacs-find-tag)))
+
+;; Emacs
+(use-package emacs
+  :init
+  (progn
+    (mech/set-encoding)
+    (mech/set-keybindings)
+    (mech/set-fontset)
+    (mech/set-font-face)
+    (mech/set-minibuffer)
+    (mech/set-display)
+    (mech/set-completion-behav)
+    (mech/set-other)
+    (mech/set-tramp)
+    (mech/set-gdb)
+    (mech/install-hooks)
+    )
+  )
+
 ;; Org mode
+(use-package org-appear
+  :config
+  (setq org-appear-autosubmarkers t)
+  (setq org-appear-autoentities t)
+  (setq org-appear-inside-latex t)
+  )
+
+(use-package org-bullets
+  :custom
+  (org-ellipsis "⤵")
+  :config
+  (setq org-bullets-bullet-list '("◉" "∙" "∙" "∙" "∙" "∙" "∙" "∙")))
+
 (defun mech/org-mode-hook ()
   (progn
     (visual-line-mode)
@@ -193,19 +320,6 @@
 	 ("C-c i" . mech/org-capture-inbox)
          ))
 
-(use-package org-appear
-  :config
-  (setq org-appear-autosubmarkers t)
-  (setq org-appear-autoentities t)
-  (setq org-appear-inside-latex t)
-  )
-
-(use-package org-bullets
-  :custom
-  (org-ellipsis "⤵")
-  :config
-  (setq org-bullets-bullet-list '("◉" "∙" "∙" "∙" "∙" "∙" "∙" "∙")))
-
 ;; Org roam
 (use-package org-roam
   :after org
@@ -228,87 +342,7 @@
    ("C-c n b" . org-roam-buffer-toggle))
   )
 
-;; Syntax checking
-(use-package flycheck
-  :config
-  ;; Resolve keybinding collision from flycheck key prefix "C-c !"
-  ;; https://stackoverflow.com/a/32239523/17006775
-  (define-key flycheck-mode-map (kbd "C-c ! !") 'org-time-stamp-inactive)
-  )
-
-;; Auto-completion
-(use-package company
-  ;; Source: https://company-mode.github.io/
-  :config
-  ;; Inspired by post: https://emacs.stackexchange.com/q/14955
-  ;; Also for debugging use M-x company-diag
-  (push 'company-clang company-backends)
-  (setq company-minimum-prefix-length 3)
-  (setq company-idle-delay 0.1)
-  :bind
-  (("C-<tab>" . company-complete))
-  )
-
-;; Project management
-(use-package projectile
-  :pin melpa
-  ;; :init
-  ;; (projectile-mode)
-  :bind
-  (:map projectile-mode-map
-	("C-c p" . projectile-command-map)
-	))
-
-;; Python mode
-;; (setq python-shell-interpreter "python")
-(use-package elpy
-  :pin melpa
-  :init
-  (elpy-enable)
-  :config
-  (setq elpy-rpc-python-command "python")
-  ;; (setq elpy-rpc-pythonpath "C:\\Users\\pete\\.emacs.d\\elpa\\elpy-20220322.41")
-  )
-
-;; C/C++ development
-(defun mech/c-mode-hook ()
-  (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
-    (ggtags-mode 1)
-    ;; (remove-hook 'completion-at-point-functions #'ggtags-completion-at-point) ;; remove outside hook does not work
-    ))
-
-(use-package ggtags
-  :config
-  (add-hook 'c-mode-common-hook #'mech/c-mode-hook)
-  (define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
-  (define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
-  (define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
-  (define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
-  (define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
-  (define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
-  (define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
-  )
-
-(use-package company-c-headers
-  :init
-  (add-to-list 'company-backends 'company-c-headers)
-  :config
-  ;; Inspired by post: https://emacs.stackexchange.com/a/22570
-  (setq company-c-headers-path-system '("c:/msys64/usr/include/"
-					"c:/msys64/mingw64/include/"
-					"c:/msys64/mingw64/lib/clang/15.0.2/include/")))
-
-(use-package sr-speedbar)
-
-;; Trying to set local compleion styles for eshell, did not work
-;; However, switching the order of completion styles works
-;; Sources: https://github.com/purcell/emacs.d/issues/778
-;; (use-package eshell
-;;   :config
-;;   (add-hook 'eshell-load-hook (lambda()
-;; 				((setq-local completion-styles '(basic partial-completion)))))
-;;   )
-
+;; Keybinding for utility functions
 (global-set-key (kbd "C-c b") 'toggle-mode-line)
 
 ;; Daemon
@@ -318,16 +352,36 @@
 			(lambda (frame) (with-selected-frame frame
 					  (progn (mech/set-fontset) (mech/set-org-colors))))))
 
-(message "Successfully loaded Emacs Sigma!")
+(message "Welcome to Emacs Prime!")
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(package-selected-packages
+   '(treemacs projectile company flycheck lsp-mode pyvenv yasnippet-snippets yasnippet org-roam org-bullets org-appear vertico use-package org-pdftools orderless gruvbox-theme embark)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(default ((t (:height 140 :family "Cascadia Code"))))
+ '(fixed-pitch ((t (:height 140 :family "JetBrains Mono"))))
+ '(org-agenda-date ((t (:foreground "sienna4" :family "JetBrains Mono"))))
+ '(org-agenda-structure ((t (:underline t :foreground "sienna2" :family "JetBrains Mono"))))
+ '(org-block ((t (:background "#112312e91380" :extend t))))
+ '(org-block-begin-line ((t (:background "#112312e91380" :extend t))))
+ '(org-block-end-line ((t (:background "#112312e91380" :extend t))))
+ '(org-code ((t (:family "Fantasque Sans Mono" :background "#15ed183218f4" :foreground "firebrick"))))
+ '(org-drawer ((t (:foreground "wheat4" :height 120))))
+ '(org-level-1 ((t (:foreground "#b3c05bd03123"))))
+ '(org-level-2 ((t (:foreground "#c7da661536a2"))))
+ '(org-level-3 ((t (:foreground "#ce35751d49e1"))))
+ '(org-level-4 ((t (:foreground "#d3b484725dfb"))))
+ '(org-level-5 ((t (:foreground "#d93393c77216"))))
+ '(org-level-6 ((t (:foreground "#deb2a31b8631"))))
+ '(org-level-7 ((t (:foreground "#e431b2709a4b"))))
+ '(org-level-8 ((t (:foreground nil))))
+ '(org-link ((t (:foreground "SlateGrey" :underline t))))
+ '(org-scheduled ((t (:foreground "wheat4"))))
+ '(org-special-keyword ((t (:foreground "wheat4" :height 120)))))
