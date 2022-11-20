@@ -240,15 +240,17 @@ current target followed by an ellipsis if there are further targets."
   (c-set-offset 'case-label '+)
   )
 
+;; Rust mode
+(use-package rustic)
+
 ;; LSP
 (use-package lsp-mode
   :ensure t
-  :init
-  (setq lsp-keymap-prefix "C-c l")
-  :commands (lsp lsp-deferred)
   :config
   ;; (add-hook 'prog-mode-hook #'lsp-deferred)
   (setq lsp-signature-render-documentation nil)
+  
+  ;; Remote clangd
   (lsp-register-client
    (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
                     :major-modes '(c-mode c++-mode)
@@ -276,8 +278,8 @@ current target followed by an ellipsis if there are further targets."
   :config
   ;; Inspired by post: https://emacs.stackexchange.com/q/14955
   ;; Use M-x company-diag for debugging.
-  (setq company-minimum-prefix-length 3)
-  (setq company-idle-delay 0.1)
+  (setq company-minimum-prefix-length 2)
+  ;; (setq company-idle-delay 0.2)
   ;; Sources: https://stackoverflow.com/a/11573802/17006775
   (setq company-backends (remove 'company-clang company-backends))
   )

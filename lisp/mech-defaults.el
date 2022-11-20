@@ -137,11 +137,12 @@
 
 ;; Completion Performance
 (defun mech/completion-behav ()
-  (setq gc-cons-threshold 12800000)
-  (setq read-process-output-max (* 64 1024))
+  (setq gc-cons-threshold (* 1024 1024 8))
+  (setq read-process-output-max (* 1024 1024))
   (setq read-file-name-completion-ignore-case t
 	  read-buffer-completion-ignore-case t
 	  completion-ignore-case t)
+  (setq tab-always-indent ':complete)
   )
 
 ;; Configure gdb view
