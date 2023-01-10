@@ -53,4 +53,27 @@
     )
   )
 
+;; Exercism
+(defun my-eval-and-run-all-tests-in-buffer ()
+  "Deletes all loaded tests from the runtime, evaluates the current buffer and runs all loaded tests with ert."
+  (interactive)
+  (ert-delete-all-tests)
+  (eval-buffer)
+  (ert 't))
+
+(defun exer-submit ()
+  (interactive)
+  (let* ((exer-dir (expand-file-name "~/Exercism"))
+	 (file-name nil)
+	 (exer-cmd nil)
+	 (file-type (read-string "File type to submit: "))
+	 )
+    (setq file-name
+	  (completing-read "Find file: "
+			   (directory-files-recursively exer-dir (format ".%s$" file-type))))
+    (setq exer-cmd (format "exercism submit %s" file-name))
+    ;; (message exer-cmd)
+    (shell-command exer-cmd))
+  )
+
 (provide 'mech-utils)

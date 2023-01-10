@@ -45,7 +45,7 @@
   (add-to-list 'org-preview-latex-process-alist
                '(imagemagick :programs ("latex" "convert")
                              :description "pdf > png" :message "you need to install the programs: latex and imagemagick." :image-input-type "pdf" :image-output-type "png" :image-size-adjust
-                             (2.2 . 2.2)
+                             (1.5 . 1.5)
                              :latex-compiler
                              ("pdflatex -interaction nonstopmode -output-directory %o %f")
                              :image-converter

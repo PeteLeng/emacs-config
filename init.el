@@ -48,7 +48,7 @@
   )
 
 (defun mech/eshell-mode-hook ()
-  (setq-local completion-styles '(basic substring orderless))
+  (setq-local completion-styles '(basic orderless))
   )
 
 (defun mech/install-hooks ()
@@ -64,7 +64,7 @@
 
 ;; Theme
 (use-package gruvbox-theme
-  :init (progn (load-theme 'gruvbox-dark-soft t t)
+  :config (progn (load-theme 'gruvbox-dark-soft t t)
                (load-theme 'gruvbox-dark-medium t t)
                (load-theme 'gruvbox-dark-hard t t)
                (load-theme 'gruvbox-light-soft t t)
@@ -75,14 +75,14 @@
 
 ;; Completion
 (use-package orderless
-  :init
+  :config
   (setq completion-styles '(substring orderless basic))
   )
 
 ;; Vertico completion
 (use-package vertico
   :ensure t
-  :init
+  :config
 
   ;; Different scroll margin
   ;; (setq vertico-scroll-margin 0)
@@ -170,12 +170,16 @@ current target followed by an ellipsis if there are further targets."
 ;; Spell check
 (use-package flyspell
   :init
-  (progn
-    (setq ispell-program-name "hunspell")
-    (setq ispell-hunspell-dict-paths-alist '(("en_US" "C:/Users/pete/LibreDict/en_US.aff")))
-    (setq ispell-local-dictionary "en_US")
-    (setq ispell-local-dictionary-alist '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)))
-    )
+  ;; (progn
+  ;;   (setq ispell-program-name "hunspell")
+  ;;   (setq ispell-hunspell-dictionary-alist '(("en_US" "C:/Users/pete/LibreDict/en_US.aff")))
+  ;;   (setq ispell-local-dictionary "en_US")
+  ;;   (setq ispell-local-dictionary-alist '(("en_US" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "en_US") nil utf-8)))
+  ;;   )
+
+  ;; source: https://emacs.stackexchange.com/a/69590
+  (setq ispell-program-name "aspell")
+  (setq ispell-extra-args '("--lang=en_US"))
   :config
   ;; resolve collision between flyspell and embark
   (global-set-key (kbd "C-~") flyspell-mode-map)
@@ -186,6 +190,7 @@ current target followed by an ellipsis if there are further targets."
 ;; PDF mode
 (use-package pdf-tools
   :ensure t
+  :defer t
   :mode ("\\.pdf\\'" . pdf-view-mode)
   ;; :pin manual ;; use-package cannot load pdf-tools
   ;; https://www.reddit.com/r/emacs/comments/qn6lv9/pdftools_melpa_problem/?utm_source=share&utm_medium=web2x&context=3
@@ -228,27 +233,48 @@ current target followed by an ellipsis if there are further targets."
   :ensure t
   ;; :init
   ;; (setenv "WORKON_HOME" "~/.pyenv/versions")
+  :defer t
   :config
   ;; Changing name from python3 to python invokes the correct python interpreter in virtual environment.
   ;; Inspired by source: https://blog.fredrikmeyer.net/2020/08/26/emacs-python-venv.html
   (setq python-shell-interpreter "python") ;; Original value is python3
   )
 
+;; python mode
+(use-package python-mode
+  :defer t
+  :config
+  (define-key python-mode-map (kbd "M-p") nil)
+  (define-key python-mode-map (kbd "M-n") nil)
+  )
+
+;; (use-package python-mode
+;;   :bind
+;;   ("C-{" . 'python-nav-backward-block)
+;;   )
+
 ;; CC mode
 (use-package cc-mode
+  :defer t
   :config
   (c-set-offset 'case-label '+)
   )
 
 ;; Rust mode
-(use-package rustic)
+(use-package rustic
+  :defer t)
 
 ;; LSP
 (use-package lsp-mode
+  ;; :init
+  ;; (setq lsp-keymap-prefix "C-c l")
   :ensure t
+  :defer t
   :config
   ;; (add-hook 'prog-mode-hook #'lsp-deferred)
   (setq lsp-signature-render-documentation nil)
+  (define-key lsp-mode-map (kbd "M-p") nil)
+  (define-key lsp-mode-map (kbd "M-n") nil)
   
   ;; Remote clangd
   (lsp-register-client
@@ -260,11 +286,13 @@ current target followed by an ellipsis if there are further targets."
 
 ;; Git intergration
 (use-package magit
-  :ensure t)
+  :ensure t
+  :defer t)
 
 ;; Syntax checking
 (use-package flycheck
   :ensure t
+  :defer t
   :config
   ;; Resolve keybinding collision from flycheck key prefix "C-c !"
   ;; https://stackoverflow.com/a/32239523/17006775
@@ -282,6 +310,9 @@ current target followed by an ellipsis if there are further targets."
   ;; (setq company-idle-delay 0.2)
   ;; Sources: https://stackoverflow.com/a/11573802/17006775
   (setq company-backends (remove 'company-clang company-backends))
+  ;; The originial value of company-dabbrev-ignore-buffers is "\\`[ *]"
+  ;; Set company dabbrev to ignore pdf buffers
+  (setq company-dabbrev-ignore-buffers ".*\\.pdf")
   )
 
 ;; Expand region
@@ -294,6 +325,8 @@ current target followed by an ellipsis if there are further targets."
 ;; Project management
 (use-package projectile
   :pin melpa
+  :config
+  (setq projectile-project-search-path '(("~/prog" . 1) ("~/proj" . 1)))
   :bind
   (:map projectile-mode-map
 	("C-c p" . projectile-command-map)
@@ -318,6 +351,7 @@ current target followed by an ellipsis if there are further targets."
 
 ;; Ace-window
 (use-package ace-window
+  :defer t
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (setq aw-background nil)
@@ -394,6 +428,7 @@ current target followed by an ellipsis if there are further targets."
          ("C-c c" . org-capture)
 	 ("M-S-<return>" . org-insert-todo-heading)
 	 ("C-c i" . mech/org-capture-inbox)
+	 ("C-c SPC" . org-table-blank-field)
          ))
 
 ;; Org roam
@@ -417,6 +452,64 @@ current target followed by an ellipsis if there are further targets."
    ("C-c n a" . org-roam-alias-add)
    ("C-c n b" . org-roam-buffer-toggle))
   )
+
+;; (progn
+;;   (use-package-ensure-elpa 'org-roam
+;; 			   '(t)
+;; 			   'nil)
+;;   (eval-after-load 'org
+;;     '(progn
+;;        (let
+;; 	   ((custom--inhibit-theme-enable nil))
+;; 	 (unless
+;; 	     (memq 'use-package custom-known-themes)
+;; 	   (deftheme use-package)
+;; 	   (enable-theme 'use-package)
+;; 	   (setq custom-enabled-themes
+;; 		 (remq 'use-package custom-enabled-themes)))
+;; 	 (custom-theme-set-variables 'use-package
+;; 				     '(org-roam-directory
+;; 				       (file-truename org-directory)
+;; 				       nil nil "Customized with use-package org-roam")))
+;;        (unless
+;; 	   (fboundp 'org-roam-node-find)
+;; 	 (autoload #'org-roam-node-find "org-roam" nil t))
+;;        (unless
+;; 	   (fboundp 'org-roam-node-random)
+;; 	 (autoload #'org-roam-node-random "org-roam" nil t))
+;;        (unless
+;; 	   (fboundp 'org-roam-node-insert)
+;; 	 (autoload #'org-roam-node-insert "org-roam" nil t))
+;;        (unless
+;; 	   (fboundp 'org-id-get-create)
+;; 	 (autoload #'org-id-get-create "org-roam" nil t))
+;;        (unless
+;; 	   (fboundp 'org-roam-tag-add)
+;; 	 (autoload #'org-roam-tag-add "org-roam" nil t))
+;;        (unless
+;; 	   (fboundp 'org-roam-alias-add)
+;; 	 (autoload #'org-roam-alias-add "org-roam" nil t))
+;;        (unless
+;; 	   (fboundp 'org-roam-buffer-toggle)
+;; 	 (autoload #'org-roam-buffer-toggle "org-roam" nil t))
+;;        (setq org-directory
+;; 	     (concat
+;; 	      (getenv "HOME")
+;; 	      "\\org\\vault"))
+;;        (setq org-roam-v2-ack t)
+;;        (eval-after-load 'org-roam
+;; 	 '(progn
+;; 	    (org-roam-db-autosync-enable)
+;; 	    t))
+;;        (bind-keys :package org-roam
+;; 		  ("C-c n f" . org-roam-node-find)
+;; 		  ("C-c n r" . org-roam-node-random)
+;; 		  ("C-c n i" . org-roam-node-insert)
+;; 		  :map org-mode-map
+;; 		  ("C-c n k" . org-id-get-create)
+;; 		  ("C-c n t" . org-roam-tag-add)
+;; 		  ("C-c n a" . org-roam-alias-add)
+;; 		  ("C-c n b" . org-roam-buffer-toggle)))))
 
 ;; Keybinding for utility functions
 (global-set-key (kbd "C-c b") 'toggle-mode-line)

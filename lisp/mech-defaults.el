@@ -11,8 +11,13 @@
 ;; Custom Key-bindings
 (defun mech/keybindings ()
   ;; windows key to super key
-  (setq w32-lwindow-modifier 'super)
-  (w32-register-hot-key [s-])
+  (if (string-equal system-type "windows-nt")
+      ;; or (equal system-type 'windows-nt)
+      (progn
+	(setq w32-lwindow-modifier 'super)
+	(w32-register-hot-key [s-])
+	)
+    )
 
   ;; Set mark
   ;; (global-set-key (kbd "C-,") 'set-mark-command)
@@ -92,7 +97,7 @@
 (defun mech/font-face ()
   (custom-set-faces
    `(default
-      ((t (:height 130 :family "Cascadia Code"))))
+      ((t (:height 130 :family "CaskaydiaCove Nerd Font"))))
    `(fixed-pitch
      ((t (:height 130 :family "JetBrains Mono"))))))
 
