@@ -103,11 +103,11 @@
    `(org-special-keyword
      ((t (:foreground "wheat4" :height 160))))
    `(org-agenda-structure
-     ((t (:underline t :foreground "chocolate" :family "JetBrains Mono"))))
+     ((t (:underline t :foreground "sienna4" :family "JetBrains Mono"))))
    `(org-agenda-date
-     ((t (:foreground "chocolate3" :family "JetBrains Mono"))))
+     ((t (:foreground "sienna4" :family "JetBrains Mono"))))
    `(org-scheduled
-     ((t (:foreground "wheat2")))))
+     ((t (:foreground "wheat4")))))
   )
 
 ;; Custom keybinding for capture
